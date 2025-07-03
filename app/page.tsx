@@ -1,53 +1,28 @@
-'use client'
+useEffect(() => {
+  const fetchData = async () => {
+    const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv');
+    const text = await res.text();
 
-import React, { useEffect, useState } from 'react';
+    console.log('取得したCSVの中身:', text);
 
-type Row = {
-  name: string;
-  value: number;
-};
+    const rows = text.trim().split('\n');
+    console.log('行数:', rows.length);
 
-export default function Page() {
-  const [data, setData] = useState<Row[]>([]);
+    const parsedData = rows.slice(1).map((row, i) => {
+      const cols = row.split('\t');
+      console.log(`row ${i + 1}:`, cols);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv');
-      const text = await res.text();
+      if (!cols[0] || !cols[1]) return null;
 
-      const rows = text.trim().split('\n');
+      return {
+        name: cols[0].trim(),
+        value: parseInt(cols[1].replace(/,/g, '').trim(), 10)
+      };
+    }).filter((row): row is Row => !!row && !isNaN(row.value));
 
-      const parsedData = rows.slice(1).map(row => {
-        const cols = row.split('\t'); // ← ここが変更ポイント！
+    console.log('パース後のデータ:', parsedData);
+    setData(parsedData);
+  };
 
-        if (!cols[0] || !cols[1]) return null;
-
-        return {
-          name: cols[0].trim(),
-          value: parseInt(cols[1].replace(/,/g, '').trim(), 10)
-        };
-      }).filter((row): row is Row => !!row && !isNaN(row.value));
-
-      setData(parsedData);
-    };
-
-    fetchData();
-  }, []);
-
-  return (
-    <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
-      <h1>R7 ふるさと納税 使い道</h1>
-      {data.length === 0 ? (
-        <p>データを読み込み中...</p>
-      ) : (
-        <ul>
-          {data.map((row, index) => (
-            <li key={index}>
-              {row.name}：{row.value.toLocaleString()} 千円
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
-  );
-}
+  fetchData();
+}, []);
