@@ -1,69 +1,63 @@
-'use client';
+'use client'
 
 import React, { useEffect, useState } from 'react';
-import Papa from 'papaparse';
 
-type Row = { name: string; value: number };
+type Row = {
+  name: string;
+  value: number;
+};
 
 export default function Page() {
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [data, setData] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCsv = async () => {
-      const res  = await fetch(
-        'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv'
-      );
-      const text = await res.text();
+    const fetchData = async () => {
+      try {
+        const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv');
+        let text = await res.text();
 
-      // CSV → オブジェクト配列（ヘッダー行をキーにする）
-      const { data } = Papa.parse<Record<string,string>>(text, {
-        header: true,
-        skipEmptyLines: true,
-      });
+        // BOM除去
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.slice(1);
+        }
 
-      // 列名（全角スペースやカッコ込み）に合わせて抽出
-      const NAME_KEY  = '事業名';
-      const VALUE_KEY = 'ふるさとづくり基金 繰入金額（千円）';
+        console.log('取得したCSV:', text);
 
-      const parsed: Row[] = data
-        .map(row => {
-          const name = row[NAME_KEY]?.trim();
-          const raw  = row[VALUE_KEY]?.replace(/,/g, '').trim();
-          const value = parseInt(raw ?? '0', 10);
-          return name && name !== '合計' && !isNaN(value)
-            ? { name, value }
-            : null;
-        })
-        .filter((r): r is Row => !!r);
+        const rows = text.split('\n').slice(1); // ヘッダー除去
+        const parsedData = rows.map((row, i) => {
+          const cols = row.trim().split(',');
+          console.log(`row[${i}]`, cols); // ← デバッグ用
+          return {
+            name: cols[0],
+            value: parseInt(cols[1]?.replace(/,/g, '') || '0')
+          };
+        });
 
-      setRows(parsed);
+        setData(parsedData.filter(row => row.name && !isNaN(row.value)));
+      } catch (e) {
+        console.error('読み込みエラー:', e);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchCsv();
+    fetchData();
   }, []);
 
-  const total = rows?.reduce((sum, r) => sum + r.value, 0) ?? 0;
-
   return (
-    <main style={{ padding: 32, background: '#000', color: '#fff' }}>
+    <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
       <h1>R7 ふるさと納税 使い道</h1>
-
-      {rows === null ? (
+      {loading ? (
         <p>データを読み込み中...</p>
       ) : (
-        <>
-          <ul>
-            {rows.map(r => (
-              <li key={r.name}>
-                {r.name}：{r.value.toLocaleString()} 千円
-              </li>
-            ))}
-          </ul>
-
-          <p style={{ marginTop: 24, fontWeight: 'bold' }}>
-            合計：{total.toLocaleString()} 千円
-          </p>
-        </>
+        <ul>
+          {data.map((row, index) => (
+            <li key={index}>
+              {row.name}：{row.value.toLocaleString()} 千円
+            </li>
+          ))}
+        </ul>
       )}
     </main>
   );
