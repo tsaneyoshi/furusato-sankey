@@ -1,6 +1,7 @@
-'use client'
+'use client';
 
 import React, { useEffect, useState } from 'react';
+import Papa from 'papaparse';
 
 type Row = {
   name: string;
@@ -12,21 +13,24 @@ export default function Page() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv');
+      const res = await fetch(
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv'
+      );
       const text = await res.text();
 
-      const lines = text.split('\n').slice(1); // ヘッダー除外
+      const result = Papa.parse<string[]>(text, { skipEmptyLines: true });
+      const rows = result.data as string[][];
 
-      const parsed = lines.map(line => {
-        const match = line.match(/^"?(.*?)"?,"?([\d,]+)"?$/);
-        if (match) {
-          const name = match[1];
-          const value = parseInt(match[2].replace(/,/g, ''));
-          if (name === '合計') return null; // ← ここで「合計」行を除外
-          return { name, value };
+      const parsed: Row[] = [];
+
+      for (const row of rows.slice(1)) {
+        const [name, rawValue] = row;
+        if (name === '合計') continue;
+        const value = parseInt(rawValue.replace(/,/g, ''));
+        if (!isNaN(value)) {
+          parsed.push({ name, value });
         }
-        return null;
-      }).filter(Boolean) as Row[];
+      }
 
       setData(parsed);
     };
@@ -34,7 +38,7 @@ export default function Page() {
     fetchData();
   }, []);
 
-  const total = data ? data.reduce((sum, row) => sum + row.value, 0) : 0;
+  const total = data?.reduce((sum, row) => sum + row.value, 0) ?? 0;
 
   return (
     <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
