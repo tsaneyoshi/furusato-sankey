@@ -8,38 +8,26 @@ type Row = {
 };
 
 export default function Page() {
-  const [data, setData] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<Row[] | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv');
-        let text = await res.text();
+      const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv');
+      const text = await res.text();
 
-        // BOM除去
-        if (text.charCodeAt(0) === 0xFEFF) {
-          text = text.slice(1);
+      const lines = text.split('\n').slice(1); // ヘッダーを除く
+
+      const parsed = lines.map(line => {
+        const match = line.match(/^"?(.*?)"?,"?([\d,]+)"?$/); // 事業名 + 数値
+        if (match) {
+          const name = match[1];
+          const value = parseInt(match[2].replace(/,/g, ''));
+          return { name, value };
         }
+        return null;
+      }).filter(Boolean) as Row[];
 
-        console.log('取得したCSV:', text);
-
-        const rows = text.split('\n').slice(1); // ヘッダー除去
-        const parsedData = rows.map((row, i) => {
-          const cols = row.trim().split(',');
-          console.log(`row[${i}]`, cols); // ← デバッグ用
-          return {
-            name: cols[0],
-            value: parseInt(cols[1]?.replace(/,/g, '') || '0')
-          };
-        });
-
-        setData(parsedData.filter(row => row.name && !isNaN(row.value)));
-      } catch (e) {
-        console.error('読み込みエラー:', e);
-      } finally {
-        setLoading(false);
-      }
+      setData(parsed);
     };
 
     fetchData();
@@ -48,7 +36,7 @@ export default function Page() {
   return (
     <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
       <h1>R7 ふるさと納税 使い道</h1>
-      {loading ? (
+      {data === null ? (
         <p>データを読み込み中...</p>
       ) : (
         <ul>
