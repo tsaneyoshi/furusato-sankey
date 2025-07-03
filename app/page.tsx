@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Papa from 'papaparse';
 
 type Row = { name: string; value: number };
@@ -9,14 +9,14 @@ export default function Page() {
   const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
-    const fetchCsv = async () => {
-      const res  = await fetch(
+    const load = async () => {
+      const res = await fetch(
         'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv'
       );
-      const text = await res.text();
-      const csv  = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+      const txt = await res.text();
+      const csv = txt.charCodeAt(0) === 0xfeff ? txt.slice(1) : txt;
 
-      // CSV → オブジェクト配列
+      // --- PapaParse で安全にパース ---
       const { data } = Papa.parse<Record<string, string>>(csv, {
         header: true,
         skipEmptyLines: true,
@@ -25,19 +25,19 @@ export default function Page() {
       const NAME  = '事業名';
       const VALUE = 'ふるさとづくり基金 繰入金額（千円）';
 
-      const parsed = data
+      const list = data
         .map(r => {
           const name = r[NAME]?.trim();
           if (!name || name === '合計') return null;
-          const val  = parseInt(r[VALUE]?.replace(/,/g, '') ?? '0', 10);
-          return !isNaN(val) ? { name, value: val } : null;
+          const num  = parseInt(r[VALUE]?.replace(/,/g, '') ?? '0', 10);
+          return !isNaN(num) ? { name, value: num } : null;
         })
         .filter(Boolean) as Row[];
 
-      setRows(parsed);
+      setRows(list);
     };
 
-    fetchCsv();
+    load();
   }, []);
 
   const total = rows?.reduce((s, r) => s + r.value, 0) ?? 0;
@@ -57,7 +57,6 @@ export default function Page() {
               </li>
             ))}
           </ul>
-
           <p style={{ marginTop: 24, fontWeight: 'bold' }}>
             合計：{total.toLocaleString()} 千円
           </p>
