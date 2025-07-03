@@ -29,7 +29,6 @@ export default function SankeyChart({ data }: SankeyChartProps) {
 
   useEffect(() => {
     const handleResize = () => {
-      // typeof window チェックを追加して、サーバーサイドでのエラーを防ぐ
       if (typeof window !== 'undefined') {
         setIsMobile(window.innerWidth < 768);
       }
@@ -50,28 +49,20 @@ export default function SankeyChart({ data }: SankeyChartProps) {
       color: colorPalette,
       tooltip: {
         trigger: 'item',
-
-        // ★ 変更点 1: isMobileの状態に応じてトリガーを切り替える
         triggerOn: isMobile ? 'click' : 'mousemove',
-
-        // フォーマッター (変更なし)
         formatter: (params: any) => {
           if (params.dataType === 'edge') return `${params.data.target}<br /><strong>${formatToJapaneseCurrency(params.data.value)}</strong>`;
           const nodeValue = params.name === 'ふるさと納税 合計' ? links.reduce((sum, l) => sum + l.value, 0) : params.value;
           return `${params.name}<br /><strong>${formatToJapaneseCurrency(nodeValue)}</strong>`;
         },
-
-        // ★ 変更点 2: positionの設定もisMobileに応じて切り替える
         position: isMobile
-          ? function (point, params, dom, rect, size) {
-              // スマホ（クリック）の場合は中央に固定
+          // ★ 変更点：関数の引数に `: any` を追加して型を明示
+          ? function (point: any, params: any, dom: any, rect: any, size: any) {
               const x = (size.viewSize[0] / 2) - (size.contentSize[0] / 2);
               const y = point[1] - (size.contentSize[1] / 2);
               return [x, y];
             }
-          : undefined, // PC（マウスオーバー）の場合はデフォルト（カーソル追従）に戻す
-
-        // スタイリング (変更なし)
+          : undefined,
         borderWidth: 0,
         backgroundColor: 'rgba(32, 32, 32, 0.9)',
         textStyle: { color: '#fff' },
