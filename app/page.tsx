@@ -19,7 +19,7 @@ export default function Page() {
       const parsedData = rows.map(row => {
         const cols = row.split(',');
         return {
-          name: cols[0],
+          name: cols[0]?.trim(),
           value: parseInt(cols[1]?.replace(/,/g, '') || '0')
         };
       });
@@ -31,7 +31,7 @@ export default function Page() {
   }, []);
 
   return (
-    <main style={{ padding: '2rem' }}>
+    <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
       <h1>R7 ふるさと納税 使い道</h1>
       <ul>
         {data.map((row, index) => (
