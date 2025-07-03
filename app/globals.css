@@ -1,26 +1,78 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* 既存のbody, * のスタイルはそのままでOK */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f6f9fc;
+  color: #0a2540;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  margin: 0;
+  padding: 0;
+}
+* {
+  box-sizing: border-box;
+}
+
+/* ★ 新機能：レイアウト用のクラスを追加 */
+.container {
+  max-width: 960px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.header h1 {
+  font-size: 36px;
+  margin: 0 0 8px 0;
+  color: #0a2540;
+  transition: font-size 0.2s; /* アニメーション効果 */
+}
+.header p {
+  margin: 0;
+  color: #525f7f;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 7px 14px 0 rgba(60, 66, 87, 0.12), 0 3px 6px 0 rgba(0, 0, 0, 0.12);
+  padding: 32px;
+  min-height: 400px;
+  transition: padding 0.2s; /* アニメーション効果 */
+}
+.card h2 {
+  margin-top: 0;
+  border-bottom: 1px solid #e6ebf1;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+.card .total-amount {
+  margin-top: 24px;
+  text-align: right;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 32px;
+  font-size: 14px;
+  color: #8898aa;
+}
+
+
+/* ★ 新機能：スマホ対応のためのメディアクエリ */
+@media (max-width: 768px) {
+  .container {
+    margin: 20px auto;
+    padding: 0 15px; /* 横の余白を少し詰める */
+  }
+
+  .header h1 {
+    font-size: 28px; /* タイトルのフォントを小さく */
+  }
+
+  .card {
+    padding: 20px; /* カード内の余白を詰める */
+  }
 }

@@ -56,12 +56,12 @@ export default function Page() {
   return (
     <div className="container">
       <header className="header">
-        <h1>R7 ふるさと納税 使い道</h1>
-        <p>守谷市のふるさと納税がどのように使われているかのレポートです。</p>
+        <h1>ふるさと納税 使い道</h1>
+        <p></p>
       </header>
 
       <main className="card">
-        <h2>お金の使い道（サンキー図）</h2>
+        <h2>令和7年度の予算書</h2>
         {rows === null ? (
           <p>データを読み込んでいます...</p>
         ) : (
