@@ -3,59 +3,65 @@
 import React, { useEffect, useState } from 'react';
 import Papa from 'papaparse';
 
-type Row = {
-  name: string;
-  value: number;
-};
+type Row = { name: string; value: number };
 
 export default function Page() {
-  const [data, setData] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch(
+    const fetchCsv = async () => {
+      const res  = await fetch(
         'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv'
       );
       const text = await res.text();
 
-      const result = Papa.parse<string[]>(text, { skipEmptyLines: true });
-      const rows = result.data as string[][];
+      // CSV → オブジェクト配列（ヘッダー行をキーにする）
+      const { data } = Papa.parse<Record<string,string>>(text, {
+        header: true,
+        skipEmptyLines: true,
+      });
 
-      const parsed: Row[] = [];
+      // 列名（全角スペースやカッコ込み）に合わせて抽出
+      const NAME_KEY  = '事業名';
+      const VALUE_KEY = 'ふるさとづくり基金 繰入金額（千円）';
 
-      for (const row of rows.slice(1)) {
-        const [name, rawValue] = row;
-        if (name === '合計') continue;
-        const value = parseInt(rawValue.replace(/,/g, ''));
-        if (!isNaN(value)) {
-          parsed.push({ name, value });
-        }
-      }
+      const parsed: Row[] = data
+        .map(row => {
+          const name = row[NAME_KEY]?.trim();
+          const raw  = row[VALUE_KEY]?.replace(/,/g, '').trim();
+          const value = parseInt(raw ?? '0', 10);
+          return name && name !== '合計' && !isNaN(value)
+            ? { name, value }
+            : null;
+        })
+        .filter((r): r is Row => !!r);
 
-      setData(parsed);
+      setRows(parsed);
     };
 
-    fetchData();
+    fetchCsv();
   }, []);
 
-  const total = data?.reduce((sum, row) => sum + row.value, 0) ?? 0;
+  const total = rows?.reduce((sum, r) => sum + r.value, 0) ?? 0;
 
   return (
-    <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
+    <main style={{ padding: 32, background: '#000', color: '#fff' }}>
       <h1>R7 ふるさと納税 使い道</h1>
-      {data === null ? (
+
+      {rows === null ? (
         <p>データを読み込み中...</p>
       ) : (
         <>
           <ul>
-            {data.map((row, index) => (
-              <li key={index}>
-                {row.name}：{row.value.toLocaleString()} 千円
+            {rows.map(r => (
+              <li key={r.name}>
+                {r.name}：{r.value.toLocaleString()} 千円
               </li>
             ))}
           </ul>
-          <p style={{ marginTop: '1rem' }}>
-            <strong>合計：</strong>{total.toLocaleString()} 千円
+
+          <p style={{ marginTop: 24, fontWeight: 'bold' }}>
+            合計：{total.toLocaleString()} 千円
           </p>
         </>
       )}
