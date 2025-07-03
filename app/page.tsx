@@ -1,88 +1,68 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Papa from 'papaparse'; // papaparseをインポート
+import Papa from 'papaparse';
 
-// Rowの型定義
-type Row = {
-  name: string;
-  value: number;
-};
+type Row = { name: string; value: number };
 
 export default function Page() {
-  // dataの初期値をnullにして、ローディング状態を明確にする
-  const [data, setData] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(
-          'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv'
-        );
-        const text = await res.text();
+    const fetchCsv = async () => {
+      const res  = await fetch(
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv'
+      );
+      const text = await res.text();
+      const csv  = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
 
-        // Papa Parseを使用してCSVをパース
-        // header: false とし、データは配列の配列として受け取る
-        const result = Papa.parse<string[]>(text, {
-          skipEmptyLines: true,
-        });
+      // CSV → オブジェクト配列
+      const { data } = Papa.parse<Record<string, string>>(csv, {
+        header: true,
+        skipEmptyLines: true,
+      });
 
-        const rows = result.data;
+      const NAME  = '事業名';
+      const VALUE = 'ふるさとづくり基金 繰入金額（千円）';
 
-        // ヘッダー行を除外して処理 (rows.slice(1))
-        const parsedData: Row[] = rows
-          .slice(1) // ヘッダー行（1行目）をスキップ
-          .map(row => {
-            const name = row[0];
-            const rawValue = row[1];
+      const parsed = data
+        .map(r => {
+          const name = r[NAME]?.trim();
+          if (!name || name === '合計') return null;
+          const val  = parseInt(r[VALUE]?.replace(/,/g, '') ?? '0', 10);
+          return !isNaN(val) ? { name, value: val } : null;
+        })
+        .filter(Boolean) as Row[];
 
-            // カンマを除去して数値に変換
-            const value = parseInt(String(rawValue).replace(/,/g, ''), 10);
-
-            return { name, value };
-          })
-          // `合計`の行と、正しくパースできなかった行を除外
-          .filter(row => row.name && row.name !== '合計' && !isNaN(row.value));
-
-        setData(parsedData);
-
-      } catch (e) {
-        console.error('読み込みエラー:', e);
-        // エラーが発生した場合も、ローディングが終了したことがわかるように空の配列をセット
-        setData([]);
-      }
+      setRows(parsed);
     };
 
-    fetchData();
-  }, []); // Eslintの警告を避けるため、空の依存配列を渡す
+    fetchCsv();
+  }, []);
 
-  // 合計値の計算
-  const total = data?.reduce((sum, row) => sum + row.value, 0) ?? 0;
+  const total = rows?.reduce((s, r) => s + r.value, 0) ?? 0;
 
-  // ローディング中の表示
-  if (data === null) {
-    return (
-      <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
-        <h1>R7 ふるさと納税 使い道</h1>
-        <p>データを読み込み中...</p>
-      </main>
-    );
-  }
-
-  // データ表示
   return (
-    <main style={{ padding: '2rem', background: '#000', color: 'white' }}>
+    <main style={{ padding: 32, background: '#000', color: '#fff' }}>
       <h1>R7 ふるさと納税 使い道</h1>
-      <ul>
-        {data.map((row, index) => (
-          <li key={index}>
-            {row.name}：{row.value.toLocaleString()} 千円
-          </li>
-        ))}
-      </ul>
-      <p style={{ marginTop: '1rem' }}>
-        <strong>合計：</strong>{total.toLocaleString()} 千円
-      </p>
+
+      {rows === null ? (
+        <p>データを読み込み中...</p>
+      ) : (
+        <>
+          <ul>
+            {rows.map(r => (
+              <li key={r.name}>
+                {r.name}：{r.value.toLocaleString()} 千円
+              </li>
+            ))}
+          </ul>
+
+          <p style={{ marginTop: 24, fontWeight: 'bold' }}>
+            合計：{total.toLocaleString()} 千円
+          </p>
+        </>
+      )}
     </main>
   );
 }
