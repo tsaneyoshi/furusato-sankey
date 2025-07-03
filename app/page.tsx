@@ -1,3 +1,6 @@
+[media pointer="file-service://file-Ge8YBKKUeAwNcesXMtAPv8"]
+以下のコードに戻しました。もう一度考えてください。開発者ツールのスクショです
+
 'use client'
 
 import React, { useEffect, useState } from 'react';
