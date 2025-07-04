@@ -77,9 +77,9 @@ export default function SankeyChart({ data }: SankeyChartProps) {
               <div style="text-align: left; font-size: 14px;">
                 ${params.data.target}<br />
                 <strong style="font-size: 16px;">${formatToJapaneseCurrency(value)}</strong>
-                <div style="font-size: 12px; color: #ccc;">
+                <!--<div style="font-size: 12px; color: #ccc;">
                   ふるさと納税充当分${percentageText}
-                </div>
+                </div>-->
               </div>
             `;
 
