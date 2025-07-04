@@ -74,6 +74,7 @@ export default function SankeyChart({ data }: SankeyChartProps) {
           emphasis: { focus: 'adjacency' },
           nodeAlign: 'left',
           nodeGap: 18,
+          draggable: false,
           data: nodes,
           links: links,
           label: {
