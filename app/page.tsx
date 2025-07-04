@@ -23,26 +23,34 @@ const formatToJapaneseCurrency = (valueInKiloYen: number): string => {
   return result;
 };
 
-type Row = { name: string; value: number };
+// ★ 変更点: Row型に description を追加
+type Row = { name: string; value: number; description: string };
 
 export default function Page() {
   const [rows, setRows] = useState<Row[] | null>(null);
 
   useEffect(() => {
-    // データ読み込みロジックは変更なし
     const load = async () => {
       const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSVULoGN1BSXkQ2CjpWfFRAyxYpAmQ70NdUCFl3N9M6AmNOiT5zc6bRH6rNvTAXR7tacXrwL361OmZ1/pub?output=csv');
       const txt = await res.text();
       const csv = txt.charCodeAt(0) === 0xfeff ? txt.slice(1) : txt;
       const { data } = Papa.parse<Record<string, string>>(csv, { header: true, skipEmptyLines: true });
+
+      // ★ 変更点: CSVのヘッダー名を定義
       const NAME = '事業名';
       const VALUE = 'ふるさとづくり基金 繰入金額（千円）';
+      const DESCRIPTION = '内容';
+
       const list = data
         .map(r => {
           const name = r[NAME]?.trim();
           if (!name || name === '合計') return null;
           const num = parseInt(r[VALUE]?.replace(/,/g, '') ?? '0', 10);
-          return !isNaN(num) ? { name, value: num } : null;
+          
+          // ★ 変更点: description も取得してオブジェクトに含める
+          const description = r[DESCRIPTION]?.trim() ?? '';
+
+          return !isNaN(num) ? { name, value: num, description } : null;
         })
         .filter(Boolean) as Row[];
       setRows(list);
@@ -52,7 +60,6 @@ export default function Page() {
 
   const total = rows?.reduce((s, r) => s + r.value, 0) ?? 0;
 
-  // ★ 変更点：インラインスタイルをclassNameに置き換え
   return (
     <div className="container">
       <header className="header">
@@ -61,7 +68,7 @@ export default function Page() {
       </header>
 
       <main className="card">
-        <h2>令和７年度 守谷市ふるさと納税から各事業への配分</h2>
+        <h2>令和７年度 ふるさと納税から各事業への配分</h2>
         {rows === null ? (
           <p>データを読み込んでいます...</p>
         ) : (
