@@ -153,5 +153,5 @@ export default function SankeyChart({ data }: SankeyChartProps) {
     };
   }, [data, isMobile]);
 
-  return <ReactECharts option={option} style={{ height: '800px', width: '100%' }} />;
+  return <ReactECharts option={option} style={{ height: '1200px', width: '100%' }} />;
 }
