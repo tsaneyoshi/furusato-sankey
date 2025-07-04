@@ -23,8 +23,14 @@ const formatToJapaneseCurrency = (valueInKiloYen: number): string => {
   return result;
 };
 
-// ★ 変更点: Row型に description を追加
-type Row = { name: string; value: number; description: string };
+// ★ 変更点: Row型に totalCost と page を追加
+type Row = {
+  name: string;
+  value: number;
+  description: string;
+  totalCost: number;
+  page: string;
+};
 
 export default function Page() {
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -36,21 +42,25 @@ export default function Page() {
       const csv = txt.charCodeAt(0) === 0xfeff ? txt.slice(1) : txt;
       const { data } = Papa.parse<Record<string, string>>(csv, { header: true, skipEmptyLines: true });
 
-      // ★ 変更点: CSVのヘッダー名を定義
+      // ★ 変更点: CSVのヘッダー名を追加
       const NAME = '事業名';
       const VALUE = 'ふるさとづくり基金 繰入金額（千円）';
       const DESCRIPTION = '内容';
+      const TOTAL_COST = '事業費（千円）';
+      const PAGE = 'ページ';
 
       const list = data
         .map(r => {
           const name = r[NAME]?.trim();
           if (!name || name === '合計') return null;
-          const num = parseInt(r[VALUE]?.replace(/,/g, '') ?? '0', 10);
-          
-          // ★ 変更点: description も取得してオブジェクトに含める
-          const description = r[DESCRIPTION]?.trim() ?? '';
 
-          return !isNaN(num) ? { name, value: num, description } : null;
+          // ★ 変更点: 各列のデータを取得
+          const value = parseInt(r[VALUE]?.replace(/,/g, '') ?? '0', 10);
+          const description = r[DESCRIPTION]?.trim() ?? '';
+          const totalCost = parseInt(r[TOTAL_COST]?.replace(/,/g, '') ?? '0', 10);
+          const page = r[PAGE]?.trim() ?? '';
+
+          return !isNaN(value) ? { name, value, description, totalCost, page } : null;
         })
         .filter(Boolean) as Row[];
       setRows(list);
