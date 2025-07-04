@@ -42,8 +42,8 @@ export default function SankeyChart({ data }: SankeyChartProps) {
     // カラーパレットやデータ定義 (変更なし)
     const stripeColor = '#635bff';
     const colorPalette = ['#635bff', '#7795f8', '#8ce2b3', '#32cde3', '#e8e8eb', '#6772e5', '#3ecf8e', '#4fd8e0'];
-    const nodes = [{ name: 'ふるさと納税 合計', itemStyle: { color: stripeColor } }, ...data.map(item => ({ name: item.name }))];
-    const links = data.map(item => ({ source: 'ふるさと納税 合計', target: item.name, value: item.value }));
+    const nodes = [{ name: '合計', itemStyle: { color: stripeColor } }, ...data.map(item => ({ name: item.name }))];
+    const links = data.map(item => ({ source: '合計', target: item.name, value: item.value }));
 
     return {
       color: colorPalette,
